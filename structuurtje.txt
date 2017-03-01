@@ -1,0 +1,12 @@
+Partitie:
+	Key: Colornum
+	Value: Lijst van vertices
+
+Loop net zovaak als het aantal vertices
+	Loop over partities
+		Lege lijst van veranderingen
+		Loop over vertices 
+			Check of de neighbours hetzelfde zijn
+		Veranderingen doorvoeren
+
+
