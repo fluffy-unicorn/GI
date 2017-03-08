@@ -55,6 +55,7 @@ def refine_colors(G, H):
             print("No")
             return
 
+    last_key = None
     # Number of loops equals number of vertices
     for v in range(vertex_count):
         for p in list(partitions.keys()):
@@ -78,15 +79,19 @@ def refine_colors(G, H):
                 else:
                     partitions[t[0]] = [t[1]]
                 t[1].colornum = t[0]
+            if len(partition) % 2 != 0:
+                print("No")
+                return
+            last_key = p
         if len(partitions) == vertex_count:
             print("Yes")
             return
-    for p in partitions:
+    for p in range(last_key + 1, len(partitions)):
         if len(partitions[p]) % 2 != 0:
             print("No")
             return
     print("Maybe")
-
+    
 def verify_colors(G, H):
     G_list = set()
     H_list = set()
