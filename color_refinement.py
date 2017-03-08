@@ -48,18 +48,14 @@ def refine_colors(G, H):
 
     last_colour += 1
 
-    # Check first if there already is a bijection or it is unbalanced
-    if len(partitions) == vertex_count:
-        print("Yes")
-    else:
-        for p in partitions:
-            if len(partitions[p]) % 2 != 0:
-                print("No")
-                return
+    # Check first if there already is an unbalanced coloring
+    for p in partitions:
+        if len(partitions[p]) % 2 != 0:
+            print("No")
+            return
 
     # Number of loops equals number of vertices
     for v in range(vertex_count):
-
         for p in partitions.copy():
             partition = partitions[p]
             tmp = []  # list of (colour, vertex, neighbourhood)-tuples
@@ -90,10 +86,6 @@ def refine_colors(G, H):
             print("No")
             return
     print("Maybe")
-    # Write output to .dot files
-    # for (i, H) in enumerate(L[0]):
-    #	print_dot('output' + str(i) + '.dot', H)
-    print_dot('output.dot', I)
 
 if __name__ == "__main__":
     with open(sys.argv[1]) as f:
