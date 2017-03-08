@@ -15,7 +15,7 @@ def get_neighbourhood(v): 				### Optimisation: store neighbourhood color list i
 def get_known_neighbourhood(n, lst):
 	for i in range(len(lst)):
 		if lst[i][2] == n:
-			return i
+			return lst[i][0]
 	return -1
 
 def get_index(v, lst):
