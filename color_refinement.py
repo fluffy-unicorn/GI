@@ -1,5 +1,5 @@
 from graph_io import load_graph, write_dot
-
+import sys
 
 # Print a dot file with filename and graph
 def print_dot(filename, G):
@@ -22,12 +22,7 @@ def get_colour_of_neighbourhood(n, lst):
     return -1
 
 
-# Load graph from file
-with open('colorref_smallexample_6_15.grl') as f:
-    L = load_graph(f, read_list=True)
-
-
-def refine_all():
+def refine_all(L):
     for i in range(0, len(L[0])):
         for j in range(i + 1, len(L[0])):
             print(i, "=", j, "?")
@@ -100,4 +95,7 @@ def refine_colors(G, H):
     #	print_dot('output' + str(i) + '.dot', H)
     print_dot('output.dot', I)
 
-refine_all()
+if __name__ == "__main__":
+    with open(sys.argv[1]) as f:
+        graph_list = load_graph(f, read_list=True)
+    refine_all(graph_list)
