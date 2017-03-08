@@ -15,17 +15,10 @@ def get_neighbourhood(v):  ### Optimisation: store neighbourhood color list in v
     return result
 
 
-def get_known_neighbourhood(n, lst):
+def get_colour_of_neighbourhood(n, lst):
     for i in range(len(lst)):
         if lst[i][2] == n:
             return lst[i][0]
-    return -1
-
-
-def get_index(v, lst):
-    for i in range(len(lst)):
-        if lst[i][1] == v:
-            return i
     return -1
 
 
@@ -57,44 +50,10 @@ def refine_colors(G, H):
             partitions[v.degree].append(v)
         else:
             partitions[v.degree] = [v]
-    print_dot('input.dot', I)
 
     last_colour += 1
-    # Number of loops equals number of vertices
-    for v in range(vertex_count):
-        for p in partitions.copy():
-            part = partitions[p]
-            n = len(part)
-            tmp = []  # list of (colour, vertex, neighbourhood)-tuples
-            i = 0
-            for j in range(1, n):
-                ni = get_neighbourhood(part[i])
-                nj = get_neighbourhood(part[j])
-                if not ni == nj:
-                    colour = get_known_neighbourhood(nj, tmp)
-                    idx = get_index(part[j], tmp)
-                    if idx == -1:
-                        if colour >= 0:
-                            tmp.append((colour, part[j], nj))
-                        else:
-                            tmp.append((last_colour, part[j], nj))
-                            last_colour += 1
-                    else:
-                        if colour >= 0:
-                            tmp[idx] = (colour, part[j], nj)
-                        else:
-                            tmp[idx] = (last_colour, part[j], nj)
-                            last_colour += 1
-            # Update the dictionary and the vertices
-            for t in tmp:
-                if t[1] in part:
-                    part.remove(t[1])
-                if t[0] in partitions:
-                    partitions[t[0]].append(t[1])
-                else:
-                    partitions[t[0]] = [t[1]]
-                t[1].colornum = t[0]
 
+    # Check first if there already is a bijection or it is unbalanced
     if len(partitions) == vertex_count:
         print("Yes")
     else:
@@ -102,7 +61,40 @@ def refine_colors(G, H):
             if len(partitions[p]) % 2 != 0:
                 print("No")
                 return
-        print("Maybe")
+
+    # Number of loops equals number of vertices
+    for v in range(vertex_count):
+
+        for p in partitions.copy():
+            partition = partitions[p]
+            tmp = []  # list of (colour, vertex, neighbourhood)-tuples
+            n_u = get_neighbourhood(partition[0])
+            for i in range(1, len(partition)):
+                n_v = get_neighbourhood(partition[i])
+                if not n_u == n_v:
+                    colour = get_colour_of_neighbourhood(n_v, tmp)
+                    if colour >= 0:
+                        tmp.append((colour, partition[i], n_v))
+                    else:
+                        tmp.append((last_colour, partition[i], n_v))
+                        last_colour += 1
+            # Update the dictionary and the vertices
+            for t in tmp:
+                partition.remove(t[1])
+                if t[0] in partitions:
+                    partitions[t[0]].append(t[1])
+                else:
+                    partitions[t[0]] = [t[1]]
+                t[1].colornum = t[0]
+
+        if len(partitions) == vertex_count:
+            print("Yes")
+            return
+    for p in partitions:
+        if len(partitions[p]) % 2 != 0:
+            print("No")
+            return
+    print("Maybe")
     # Write output to .dot files
     # for (i, H) in enumerate(L[0]):
     #	print_dot('output' + str(i) + '.dot', H)
