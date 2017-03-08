@@ -56,7 +56,7 @@ def refine_colors(G, H):
 
     # Number of loops equals number of vertices
     for v in range(vertex_count):
-        for p in partitions.copy():
+        for p in list(partitions.keys()):
             partition = partitions[p]
             tmp = []  # list of (colour, vertex, neighbourhood)-tuples
             n_u = get_neighbourhood(partition[0])
@@ -77,7 +77,6 @@ def refine_colors(G, H):
                 else:
                     partitions[t[0]] = [t[1]]
                 t[1].colornum = t[0]
-
         if len(partitions) == vertex_count:
             print("Yes")
             return
