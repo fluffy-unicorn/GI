@@ -49,36 +49,34 @@ for v in G.vertices:
 		partitions[v.degree].append(v)
 	else:
 		partitions[v.degree] = [v]
-print(partitions)
 print_dot('input.dot', G)
 
 last_colour += 1
 # Number of loops equals number of vertices
 for v in range(vertex_count):
-	print("Run " + str(v+1) + "/" + str(vertex_count))
 	for p in partitions.copy():
 		part = partitions[p]
 		n = len(part)
 		tmp = [] # list of (colour, vertex, neighbourhood)-tuples
-		for i in range(n):
-			for j in range(i+1, n):
-				ni = get_neighbourhood(part[i])
-				nj = get_neighbourhood(part[j])
-				if not ni == nj:
-					colour = get_known_neighbourhood(nj, tmp)
-					idx = get_index(part[j], tmp)
-					if idx == -1:
-						if colour >= 0:
-							tmp.append((colour, part[j], nj))
-						else:
-							tmp.append((last_colour, part[j], nj))
-							last_colour += 1
+		i = 0
+		for j in range(1, n):
+			ni = get_neighbourhood(part[i])
+			nj = get_neighbourhood(part[j])
+			if not ni == nj:
+				colour = get_known_neighbourhood(nj, tmp)
+				idx = get_index(part[j], tmp)
+				if idx == -1:
+					if colour >= 0:
+						tmp.append((colour, part[j], nj))
 					else:
-						if colour >= 0:
-							tmp[idx] = (colour, part[j], nj)
-						else:
-							tmp[idx] = (last_colour, part[j], nj)
-							last_colour += 1
+						tmp.append((last_colour, part[j], nj))
+						last_colour += 1
+				else:
+					if colour >= 0:
+						tmp[idx] = (colour, part[j], nj)
+					else:
+						tmp[idx] = (last_colour, part[j], nj)
+						last_colour += 1
 		# Update the dictionary and the vertices
 		for t in tmp:
 			if t[1] in part:
@@ -88,7 +86,15 @@ for v in range(vertex_count):
 			else:
 				partitions[t[0]] = [t[1]]
 			t[1].colornum = t[0]
-		
+
+if len(partitions) == vertex_count:
+	print("Yes")
+else:
+	for p in partitions:
+		if len(p) % 2 != 0:
+			print("No")
+			break
+	print("Maybe")
 # Write output to .dot files
 #for (i, H) in enumerate(L[0]):
 #	print_dot('output' + str(i) + '.dot', H)
