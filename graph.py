@@ -382,16 +382,16 @@ class Graph(object):
 
     def deepcopy(self) -> "Graph":
         dictionary = dict()
-        Graph newG = Graph(self.directed)
-        for v in range(len(self.vertices)):
+        newG = Graph(self.directed)
+        for v in self.vertices:
             newV = Vertex(newG)
             newV.colornum = v.colornum
-            newG.add(newV)
+            newG += newV
             dictionary[v] = newV
-        for e in range(len(self.edges)):
-            newE = Edge(newG)
-            newE.tail = dictionary[e.tail]
-            newE.head = dictionary[e.head]
+        for e in self.edges:
+            newE = Edge(dictionary[e.tail], dictionary[e.head])
+            newG += newE
+        return newG
 
 class UnsafeGraph(Graph):
     @property
