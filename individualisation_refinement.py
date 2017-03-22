@@ -30,14 +30,9 @@ def refine_all(L):
             verify_colors(L[0][i], L[0][j])
 
 
-def refine_colors(G, H):
-    vertex_count = len(G)
-    # Create a disjoint union of the first two graphs
-    I = G + H
-
-    partitions = {}
+# Initially color the vertices based on degree
+def initial_coloring(I, partitions):
     last_colour = 0
-    # Initially color the vertices based on degree
     for v in I.vertices:
         v.colornum = v.degree
         if last_colour < v.degree:
@@ -46,15 +41,9 @@ def refine_colors(G, H):
             partitions[v.degree].append(v)
         else:
             partitions[v.degree] = [v]
+    return last_colour
 
-    last_colour += 1
-
-    # Check first if there already is an unbalanced coloring
-    for p in partitions:
-        if len(partitions[p]) % 2 != 0:
-            print("No")
-            return
-
+def count_isomorphisms(vertex_count, partitions, last_colour):
     last_key = None
     # Number of loops equals number of vertices
     for v in range(vertex_count):
@@ -80,34 +69,47 @@ def refine_colors(G, H):
                     partitions[t[0]] = [t[1]]
                 t[1].colornum = t[0]
             if len(partition) % 2 != 0:
-                print("No")
-                return
+                return 0
             last_key = p
         if len(partitions) == vertex_count:
-            print("Yes")
-            return
+            return 1
     for p in range(last_key + 1, len(partitions)):
+        if len(partitions[p]) % 2 != 0:
+            return 0
+    # Change partitions
+    #return count_isomorphisms(vertex_count, partitions)
+    return 2
+
+def refine_colors(G, H):
+    vertex_count = len(G)
+    # Create a disjoint union of the first two graphs
+    I = G + H
+
+    partitions = {}
+    last_colour = initial_coloring(I, partitions) + 1
+
+    # Check first if there already is an unbalanced coloring
+    for p in partitions:
         if len(partitions[p]) % 2 != 0:
             print("No")
             return
-    print("Maybe")
+    result = count_isomorphisms(vertex_count, partitions, last_colour)
+    if result == 0:
+        print("No")
+        return
+    else:
+        print("Yes:", result)
+        return
     
 def verify_colors(G, H):
-    G_list = set()
-    H_list = set()
     for G_v in G.vertices:
-        G_list.add(G_v.colornum)
         for H_v in H.vertices:
-            H_list.add(H_v.colornum)
             if G_v.colornum == H_v.colornum:
                 if not get_neighbourhood(G_v) == get_neighbourhood(H_v):
                     print (False)
-                    return
-    if len(G_list) == len(G.vertices) and len(H_list) == len(H.vertices) and G_list == H_list:
-        print (True)
-        return
-    print ("Maybe", False)
-    return
+                    return False
+    print (True)
+    return True
 
 if __name__ == "__main__":
     with open(sys.argv[1]) as f:

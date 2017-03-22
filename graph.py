@@ -319,7 +319,6 @@ class Graph(object):
         :param other: Graph to add to `self'.
         :return: New graph which is a disjoint union of `self' and `other'.
         """
-        # TODO deepcopy vertices and edges
         result = Graph(False, 0)
         vertex_list = []
         edge_list = []
@@ -381,6 +380,15 @@ class Graph(object):
         """
         return v in u.neighbours and (not self.directed or any(e.head == v for e in u.incidence))
 
+    def deepcopy(self) -> "Graph":
+        Graph newG = Graph(self.directed)
+        for v in range(len(self.vertices)):
+            newV = Vertex(newG)
+            newV.colornum = v.colornum
+            newG.add(newV)
+        for e in range(len(self.edges)):
+            newE = Edge(newG)
+            # Add head and tail to edges
 
 class UnsafeGraph(Graph):
     @property

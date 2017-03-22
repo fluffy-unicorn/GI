@@ -93,21 +93,14 @@ def refine_colors(G, H):
     print("Maybe")
     
 def verify_colors(G, H):
-    G_list = set()
-    H_list = set()
     for G_v in G.vertices:
-        G_list.add(G_v.colornum)
         for H_v in H.vertices:
-            H_list.add(H_v.colornum)
             if G_v.colornum == H_v.colornum:
                 if not get_neighbourhood(G_v) == get_neighbourhood(H_v):
                     print (False)
-                    return
-    if len(G_list) == len(G.vertices) and len(H_list) == len(H.vertices) and G_list == H_list:
-        print (True)
-        return
-    print ("Maybe", False)
-    return
+                    return False
+    print (True)
+    return True
 
 if __name__ == "__main__":
     with open(sys.argv[1]) as f:
