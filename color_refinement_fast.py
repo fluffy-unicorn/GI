@@ -1,5 +1,5 @@
 from graph_io import load_graph, write_dot
-import sys
+import sys, time
 
 # Print a dot file with filename and graph
 def print_dot(filename, G):
@@ -23,11 +23,14 @@ def get_colour_of_neighbourhood(n, lst):
 
 
 def refine_all(L):
+    start = time.time()
     for i in range(0, len(L[0])):
         for j in range(i + 1, len(L[0])):
             print(i, "=", j, "?")
             refine_colors(L[0][i], L[0][j])
             verify_colors(L[0][i], L[0][j])
+    end = time.time()
+    print("Elapsed time: " + str(end-start))
 
 
 def refine_colors(G, H):
