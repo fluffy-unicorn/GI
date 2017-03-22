@@ -381,14 +381,17 @@ class Graph(object):
         return v in u.neighbours and (not self.directed or any(e.head == v for e in u.incidence))
 
     def deepcopy(self) -> "Graph":
+        dictionary = dict()
         Graph newG = Graph(self.directed)
         for v in range(len(self.vertices)):
             newV = Vertex(newG)
             newV.colornum = v.colornum
             newG.add(newV)
+            dictionary[v] = newV
         for e in range(len(self.edges)):
             newE = Edge(newG)
-            # Add head and tail to edges
+            newE.tail = dictionary[e.tail]
+            newE.head = dictionary[e.head]
 
 class UnsafeGraph(Graph):
     @property
