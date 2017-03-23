@@ -1,5 +1,5 @@
 from graph_io import load_graph, write_dot
-import sys
+import sys, time
 
 # Magic numbers
 NO = 0
@@ -65,12 +65,20 @@ def refine_all(L):
     Refine and verify all graphs in a list from the .grl file
     :param L: The list of graphs
     """
+    alg_time = 0
     for i in range(0, len(L[0])):
         for j in range(i + 1, len(L[0])):
+            # Starting the algorithm on (i, j)
+            start_alg = time.time()
             isomorphisms = refine_colors(L[0][i], L[0][j])
+            end_alg = time.time()
+            alg_time += end_alg - start_alg
+            # Starting the verifier on (i, j)
             verified = verify_colors(L[0][i], L[0][j])
             if (isomorphisms > 0):
                 print("("+str(i)+","+str(j)+") "+str(isomorphisms)+" ["+str(verified)+"]")
+    print("Elapsed time (algorithm): " + str(int(alg_time*1000)) + " ms")
+
             
 
 def get_partitions(G, H):
@@ -269,6 +277,9 @@ if __name__ == "__main__":
     Main function
     :param 1: The .grl-file
     """
+    start = time.time()
     with open(sys.argv[1]) as f:
         graph_list = load_graph(f, read_list=True)
     refine_all(graph_list)
+    end = time.time()
+    print("Elapsed time (total): " + str(int((end-start)*1000)) + " ms")
