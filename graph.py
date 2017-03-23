@@ -381,6 +381,9 @@ class Graph(object):
         return v in u.neighbours and (not self.directed or any(e.head == v for e in u.incidence))
 
     def deepcopy(self) -> "Graph":
+        """
+        Returns a deepcopy of the graph
+        """
         dictionary = dict()
         newG = Graph(self.directed)
         for v in self.vertices:

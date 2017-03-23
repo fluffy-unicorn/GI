@@ -1,13 +1,26 @@
+"""
+Working implementation of the simple (naive) color refinement
+"""
 from graph_io import load_graph, write_dot
 import sys, time
 
-# Print a dot file with filename and graph
+
 def print_dot(filename, G):
+    """
+    Print a dot file with filename and graph
+    :param filename: The file
+    :param G: The graph
+    """
     with open(filename, 'w') as f:
         write_dot(G, f)
 
 
-def get_neighbourhood(v):  ### Optimisation: store neighbourhood color list in vertex class ???
+def get_neighbourhood(v):
+    """
+    Get a sorted list of all the colors of all the neighbours
+    :param v: The vertex
+    :return: The sorted list
+    """
     result = []
     for n in v.neighbours:
         result.append(n.colornum)
@@ -16,6 +29,12 @@ def get_neighbourhood(v):  ### Optimisation: store neighbourhood color list in v
 
 
 def get_colour_of_neighbourhood(n, lst):
+    """
+    Get the color for which the same colored neighbourhood is already in the list
+    :param n: List of neighbour colors
+    :param lst: The 'update-list' with the following tuples: (color, vertex, neighbourhood)
+    :return: the found color or -1
+    """
     for i in range(len(lst)):
         if lst[i][2] == n:
             return lst[i][0]
@@ -23,6 +42,10 @@ def get_colour_of_neighbourhood(n, lst):
 
 
 def refine_all(L):
+    """
+    Refine and verify all graphs in a list from the .grl file
+    :param L: The list of graphs
+    """
     start = time.time()
     for i in range(0, len(L[0])):
         for j in range(i + 1, len(L[0])):
@@ -34,6 +57,11 @@ def refine_all(L):
 
 
 def refine_colors(G, H):
+    """
+    Implementation of the simple (naive) color refinement algorithm on graphs G and H
+    :param G: The graph G
+    :param H: The graph H
+    """
     vertex_count = len(G)
     # Create a disjoint union of the first two graphs
     I = G + H
@@ -96,6 +124,12 @@ def refine_colors(G, H):
     print("Maybe")
     
 def verify_colors(G, H):
+    """
+    Verify the colors of graph G and H
+    :param G: The graph G
+    :param H: The graph H
+    :return: Whether the resulting coloring is a bijection or not
+    """
     G_list = set()
     H_list = set()
     for G_v in G.vertices:
@@ -113,6 +147,10 @@ def verify_colors(G, H):
     return
 
 if __name__ == "__main__":
+    """
+    Main function
+    :param 1: The .grl-file
+    """
     with open(sys.argv[1]) as f:
         graph_list = load_graph(f, read_list=True)
     refine_all(graph_list)

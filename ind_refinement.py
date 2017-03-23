@@ -1,47 +1,85 @@
 from graph_io import load_graph, write_dot
 import sys
 
-# Print a dot file with filename and graph
+# Magic numbers
+NO = 0
+YES = 1
+MAYBE = 2
+COLOR = 0
+VERTEX = 1
+NEIGHBOURS = 2
+UNKNOWN = -1
+VERTICES = 1
+
 def print_dot(filename, G):
+    """
+    Print a dot file with filename and graph
+    :param filename: The file
+    :param G: The graph
+    """
     with open(filename, 'w') as f:
         write_dot(G, f)
 
-# Update the partitions dictionary 'partitions'
-# Key: the color of the partitions
-# Value: the vertex that needs to be added to the partition
-def update_partition_dict(partitions, key, value):
-     if key in partitions:
+
+def update_partitions_dict(partitions, key, value):
+    """
+    Update the partitions dictionary 'partitions'
+    :param partitions: The dictionary 'partitions'
+    :param key: The color of the partitions
+    :param value: the vertex that needs to be added to the partition
+    """
+    if key in partitions:
         partitions[key].append(value)
-     else:
+    else:
         partitions[key] = [value]
 
-# Get the neighbours of Vertex v as a sorted list of colors
-def get_neighbourhood(v: "Vertex") -> list(int):  
+
+def get_neighbourhood(v):  
+    """
+    Get a sorted list of all the colors of all the neighbours
+    :param v: The vertex
+    :return: The sorted list
+    """
     result = []
     for n in v.neighbours:
         result.append(n.colornum)
     result.sort()
     return result
 
-# Check whether a neighbourhood n exists in the list lst
-# With lst = [(color, vertex, neighbourhood)]
-# Returns the color of -1 if not found
-def get_color_of_neighbourhood(n, lst):
-    for i in range(len(lst)):
-        if lst[i][2] == n:
-            return lst[i][0]
-    return -1
 
-# Refine and verify all graphs in a graph list
+def get_color_of_neighbourhood(n, lst):
+    """
+    Get the color for which the same colored neighbourhood is already in the list
+    :param n: List of neighbour colors
+    :param lst: The 'update-list' with the following tuples: (color, vertex, neighbourhood)
+    :return: the found color or -1
+    """
+    for i in range(len(lst)):
+        if lst[i][NEIGHBOURS] == n:
+            return lst[i][COLOR]
+    return UNKNOWN
+
+
 def refine_all(L):
+    """
+    Refine and verify all graphs in a list from the .grl file
+    :param L: The list of graphs
+    """
     for i in range(0, len(L[0])):
         for j in range(i + 1, len(L[0])):
-            print(i, "=", j, "?")
-            refine_colors(L[0][i], L[0][j])
-            verify_colors(L[0][i], L[0][j])
+            isomorphisms = refine_colors(L[0][i], L[0][j])
+            verified = verify_colors(L[0][i], L[0][j])
+            if (isomorphisms > 0):
+                print("("+str(i)+","+str(j)+") "+str(isomorphisms)+" ["+str(verified)+"]")
+            
 
-# Make a dictionary with partitions of graphs G and H
 def get_partitions(G, H):
+    """
+    Make a dictionary with color classes of graphs G and H
+    :param G: The graph G
+    :param H: The graph H
+    :return: A dictionary with color classes
+    """
     result = dict()
     # graph G
     for vG in G.vertices:
@@ -51,84 +89,129 @@ def get_partitions(G, H):
         update_partitions_dict(result, vH.colornum, vH)
     return result
 
-# Get the smallest color class in the given partitions dict
+
 def get_smallest_colorclass(partitions):
-    size = float("inf")
+    """
+    Returns the smallest color class in the given 'partitions' dictionary
+    :param partitions: The dictionary
+    :return: The smallest color class
+    """
+    size = float("inf") # Latest known smallest size of a color class
     smallest = None
     for p in partitions.items():
-        if len(p) < size:
+        if len(p) < size: # Only update if color class size is smaller than known upto now
             size = len(p)
             smallest = p
     return smallest
 
-# Calculate the coarsest stable coloring on graphs G and H
-# Returns (int, dict)
-# With int: 0: unbalanced, 1: bijection, 2: stable but no bijection
-# And dict: resulting partition dict
+def get_last_color(partitions):
+    """
+    Returns the last used color class in the partitions dictionary
+    :param partitions: The dictionary
+    :return: The last used color class
+    """
+    last_color = 0
+    for p in partitions:
+        if p > last_color:
+            last_color = p
+    return last_color
+
+def initial_coloring(G, partitions):
+    """
+    Calculates the initial coloring based on the degrees of the vertices on a graph
+    :param G: The graph
+    :param partitions: The partitions dictionary to be used
+    :return: The last color used in the coloring
+    """
+    last_color = 0
+    for v in G.vertices:
+        v.colornum = v.degree
+        if last_color < v.degree:
+            last_color = v.degree
+        if v.degree in partitions:
+            partitions[v.degree].append(v)
+        else:
+            partitions[v.degree] = [v]
+    return last_color
+
 def coarsest_stable_coloring(G, H):
+    """
+    Calculates the coarsest stable coloring on graphs G and H
+    :param G: The graph G
+    :param H: The graph H
+    :return: Tuple (int, dict)
+    With int -> 0: unbalanced, 1: bijection, 2: stable but no bijection
+    and dict: resulting partitions dictionary
+    """
     # Calculate the number of vertices and check whether the graphs
     # have the same number of vertices
     vertex_count = len(G.vertices)
     if not(vertex_count == len(H.vertices)):
-        print("No (vertex count is not the same)")
-        return (0, dict())
+        return (NO, dict())
+
     # Retrieve the partitions of the graphs
     partitions = get_partitions(G, H)
+    # Last key is the latest color class that is check whether it has
+    # an even or and odd number of vertices in it (odd number means unbalanced)
     last_key = None
+    last_color = get_last_color(partitions)
     # Number of loops equals number of vertices
     for v in range(vertex_count):
         for p in list(partitions.keys()):
-            partition = partitions[p]
-            tmp = []  # list of (color, vertex, neighbourhood)-tuples
-            n_u = get_neighbourhood(partition[0])
-            for i in range(1, len(partition)):
-                n_v = get_neighbourhood(partition[i])
+            color_class = partitions[p]
+            update_list = []  # list of (color, vertex, neighbourhood)-tuples
+            n_u = get_neighbourhood(color_class[0])
+            for i in range(1, len(color_class)):
+                n_v = get_neighbourhood(color_class[i])
                 if not n_u == n_v:
-                    color = get_color_of_neighbourhood(n_v, tmp)
-                    if color >= 0:
-                        tmp.append((color, partition[i], n_v))
+                    color = get_color_of_neighbourhood(n_v, update_list)
+                    if color != UNKNOWN:
+                        update_list.append((color, color_class[i], n_v))
                     else:
-                        tmp.append((last_color, partition[i], n_v))
+                        update_list.append((last_color, color_class[i], n_v))
                         last_color += 1
             # Update the dictionary and the vertices
-            for t in tmp:
-                partition.remove(t[1])
-                if t[0] in partitions:
-                    partitions[t[0]].append(t[1])
+            for t in update_list:
+                color_class.remove(t[VERTEX])
+                if t[COLOR] in partitions:
+                    partitions[t[COLOR]].append(t[VERTEX])
                 else:
-                    partitions[t[0]] = [t[1]]
-                t[1].colornum = t[0]
-            if len(partition) % 2 != 0:
-                return (0, partitions) #No
+                    partitions[t[COLOR]] = [t[VERTEX]]
+                t[VERTEX].colornum = t[COLOR]
+            if len(color_class) % 2 != 0: # Check for unbalanced coloring
+                return (NO, partitions) 
             last_key = p
-        if len(partitions) == vertex_count:
-            return (1, partitions) #Yes
+        if len(partitions) == vertex_count: # Check for bijection
+            return (YES, partitions)
+    # Check the resulting color classes for an unbalanced coloring
     for p in range(last_key + 1, len(partitions)):
         if len(partitions[p]) % 2 != 0:
-            return (0, partitions) #No
-    return (2, partitions) #Maybe
+            return (NO, partitions)
+    return (MAYBE, partitions)
 
-# Count the number of isomorphisms with graphs G and H
+
 def count_isomorphisms(G, H):
+    """
+    Count the number of isomorphisms with graph G and H
+    :param G: The graph G
+    :param H: The graph H
+    :return: The number of isomorphisms
+    """
+    # Keep a copy of the original graphs (for backtracking reasons)
+    # Not used yet...
     original_G = G.deepcopy()
     original_H = H.deepcopy()
     (result, partitions) = coarsest_stable_coloring(G, H)
     # Coarsest stable coloring is unbalanced or a bijection
-    if result = 0: #unbalanced
-        G = original_G
-        H = original_H
-        return 0
-    if result = 1:
-        return 1
+    if result == NO:
+        return NO
+    elif result == YES:
+        return YES
     # Coarsest stable coloring is stable but not a bijection
     else:
-        # Get last color
-        last_color = 0
-        for p in partitions:
-            if p > last_color:
-                last_color = p
+        last_color = get_last_color(partitions)
         # Choose a color class C
-        C = get_smallest_colorclass(partitions)
+        C = get_smallest_colorclass(partitions)[VERTICES]
         # Choose x in C union V(G)
         x = None
         for vertex in C:
@@ -139,59 +222,53 @@ def count_isomorphisms(G, H):
         # For all y in C union V(H)
         for y in C:
             if (y.graph == H):
-                #   num = num + count_isomorphisms(G + x, H + x)
+                # num = num + count_isomorphisms(G + x, H + x)
                 old_color = x.colornum
                 x.colornum = last_color + 1
                 y.colornum = last_color + 1
-                num = num + count_isomorphisms(G, H)
+                num += count_isomorphisms(G, H)
                 x.colornum = old_color
         return num
 
 def refine_colors(G, H):
-    vertex_count = len(G)
-    # Create a disjoint union of the first two graphs
-    I = G + H
-
+    """
+    Refine the colors on graphs G and H
+    :param G: The graph G
+    :param H: The graph H   
+    :return: The number of isomorphisms
+    """
     partitions = {}
-    last_color = 0
-    # Initially color the vertices based on degree
-    for v in I.vertices:
-        v.colornum = v.degree
-        if last_color < v.degree:
-            last_color = v.degree
-        if v.degree in partitions:
-            partitions[v.degree].append(v)
-        else:
-            partitions[v.degree] = [v]
-
+    last_color = initial_coloring(G, partitions)
+    last_color = initial_coloring(H, partitions)
     last_color += 1
 
     # Check first if there already is an unbalanced coloring
     for p in partitions:
         if len(partitions[p]) % 2 != 0:
-            print("No")
-            return
+            return 0
     
-    result = count_isomorphisms(G, H)
-    if result == 0:
-        print ("No")
-        return
-    else:
-        print ("Yes: " + str(result))
-        return
+    return count_isomorphisms(G, H)
     
     
 def verify_colors(G, H):
+    """
+    Verify the colors of graph G and H
+    :param G: The graph G
+    :param H: The graph H
+    :return: Whether the resulting coloring is a bijection or not
+    """
     for G_v in G.vertices:
         for H_v in H.vertices:
             if G_v.colornum == H_v.colornum:
                 if not get_neighbourhood(G_v) == get_neighbourhood(H_v):
-                    print (False)
                     return False
-    print (True)
     return True
 
 if __name__ == "__main__":
+    """
+    Main function
+    :param 1: The .grl-file
+    """
     with open(sys.argv[1]) as f:
         graph_list = load_graph(f, read_list=True)
     refine_all(graph_list)
