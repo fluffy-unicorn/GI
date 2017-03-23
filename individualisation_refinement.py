@@ -21,7 +21,24 @@ def get_colour_of_neighbourhood(n, lst):
             return lst[i][0]
     return -1
 
+def create_partition_dictionary(G): 
+    result = dict()
+    for v in G.vertices:
+        if v.colornum in result:
+            result[v.colornum].append(v)
+        else:
+            result[v.colornum] = [v]
+    return result
 
+def get_smallest_partition(partitions):
+    size = float("inf")
+    smallest = None
+    for p in partitions.items():
+        if len(p) < size:
+            size = len(p)
+            smallest = p
+    return smallest
+            
 def refine_all(L):
     for i in range(0, len(L[0])):
         for j in range(i + 1, len(L[0])):
@@ -43,7 +60,7 @@ def initial_coloring(I, partitions):
             partitions[v.degree] = [v]
     return last_colour
 
-def count_isomorphisms(vertex_count, partitions, last_colour):
+def count_isomorphisms(vertex_count, partitions, last_colour, G):
     last_key = None
     # Number of loops equals number of vertices
     for v in range(vertex_count):
@@ -76,9 +93,15 @@ def count_isomorphisms(vertex_count, partitions, last_colour):
     for p in range(last_key + 1, len(partitions)):
         if len(partitions[p]) % 2 != 0:
             return 0
-    # Change partitions
-    #return count_isomorphisms(vertex_count, partitions)
-    return 2
+    
+    H = G.deepcopy()
+    new_partitions = create_partition_dictionary(H)
+    smallest = get_smallest_partition(new_partitions)
+    # Create new colour
+    smallest[1][0].colornum = last_colour + 1
+    new_partitions[last_colour + 1] = smallest[1][0]
+    smallest[1].remove(smallest[1][0])   
+    return count_isomorphisms(vertex_count, new_partitions, last_colour + 1, H)
 
 def refine_colors(G, H):
     vertex_count = len(G)
@@ -93,12 +116,12 @@ def refine_colors(G, H):
         if len(partitions[p]) % 2 != 0:
             print("No")
             return
-    result = count_isomorphisms(vertex_count, partitions, last_colour)
+    result = count_isomorphisms(vertex_count, partitions, last_colour, I)
     if result == 0:
         print("No")
         return
     else:
-        print("Yes:", result)
+        print("Yes: " + str(result))
         return
     
 def verify_colors(G, H):
@@ -106,9 +129,9 @@ def verify_colors(G, H):
         for H_v in H.vertices:
             if G_v.colornum == H_v.colornum:
                 if not get_neighbourhood(G_v) == get_neighbourhood(H_v):
-                    print (False)
+                    print ("Yes")
                     return False
-    print (True)
+    print ("No")
     return True
 
 if __name__ == "__main__":
