@@ -75,8 +75,7 @@ def refine_all(L):
             alg_time += end_alg - start_alg
             # Starting the verifier on (i, j)
             verified = verify_colors(L[0][i], L[0][j])
-            if (isomorphisms > 0):
-                print("("+str(i)+","+str(j)+") "+str(isomorphisms)+" ["+str(verified)+"]")
+            print("("+str(i)+","+str(j)+") "+str(isomorphisms)+" ["+str(verified)+"]")
     print("Elapsed time (algorithm): " + str(int(alg_time*1000)) + " ms")
 
             
@@ -106,11 +105,12 @@ def get_smallest_colorclass(partitions):
     """
     size = float("inf") # Latest known smallest size of a color class
     smallest = None
-    for p in partitions.items():
-        if len(p) < size: # Only update if color class size is smaller than known upto now
+    for p in partitions.values():
+        if size > len(p) >= 4: # Only update if color class size is smaller than known upto now
             size = len(p)
             smallest = p
     return smallest
+
 
 def get_last_color(partitions):
     """
@@ -123,6 +123,7 @@ def get_last_color(partitions):
         if p > last_color:
             last_color = p
     return last_color
+
 
 def initial_coloring(G, partitions):
     """
@@ -142,6 +143,7 @@ def initial_coloring(G, partitions):
             partitions[v.degree] = [v]
     return last_color
 
+
 def coarsest_stable_coloring(G, H):
     """
     Calculates the coarsest stable coloring on graphs G and H
@@ -155,7 +157,7 @@ def coarsest_stable_coloring(G, H):
     # have the same number of vertices
     vertex_count = len(G.vertices)
     if not(vertex_count == len(H.vertices)):
-        return (NO, dict())
+        return NO, dict()
 
     # Retrieve the partitions of the graphs
     partitions = get_partitions(G, H)
@@ -198,17 +200,18 @@ def coarsest_stable_coloring(G, H):
     return (MAYBE, partitions)
 
 
-def count_isomorphisms(G, H):
+def count_isomorphisms(G, H, D, I):
     """
     Count the number of isomorphisms with graph G and H
     :param G: The graph G
     :param H: The graph H
     :return: The number of isomorphisms
     """
-    # Keep a copy of the original graphs (for backtracking reasons)
-    # Not used yet...
-    original_G = G.deepcopy()
-    original_H = H.deepcopy()
+    color = get_last_color(get_partitions(G, H)) + 1
+
+    for vertex in D+I:
+        vertex.colornum = color
+
     (result, partitions) = coarsest_stable_coloring(G, H)
     # Coarsest stable coloring is unbalanced or a bijection
     if result == NO:
@@ -217,26 +220,24 @@ def count_isomorphisms(G, H):
         return YES
     # Coarsest stable coloring is stable but not a bijection
     else:
-        last_color = get_last_color(partitions)
+        copyG = G.deepcopy()
+        copyH = H.deepcopy()
         # Choose a color class C
-        C = get_smallest_colorclass(partitions)[VERTICES]
+        C = get_smallest_colorclass(get_partitions(copyG, copyH))  # C moet >= 4 zijn
         # Choose x in C union V(G)
         x = None
         for vertex in C:
-            if (vertex.graph == G):
+            if vertex.graph == copyG:
                 x = vertex
                 break
         num = 0
         # For all y in C union V(H)
         for y in C:
-            if (y.graph == H):
+            if y.graph == copyH:
                 # num = num + count_isomorphisms(G + x, H + x)
-                old_color = x.colornum
-                x.colornum = last_color + 1
-                y.colornum = last_color + 1
-                num += count_isomorphisms(G, H)
-                x.colornum = old_color
+                num += count_isomorphisms(copyG, copyH, [x], [y])
         return num
+
 
 def refine_colors(G, H):
     """
@@ -255,7 +256,7 @@ def refine_colors(G, H):
         if len(partitions[p]) % 2 != 0:
             return 0
     
-    return count_isomorphisms(G, H)
+    return count_isomorphisms(G, H, [], [])
     
     
 def verify_colors(G, H):
