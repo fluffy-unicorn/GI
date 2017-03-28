@@ -47,6 +47,17 @@ def get_neighbourhood(v):
     return result
 
 
+def get_copied_vertex(original, copy, vertex):
+    """
+    Get a sorted list of all the colors of all the neighbours
+    :param original: The original graph
+    :param copy: Copy of the graph
+    :return: The sorted list
+    """
+    index = original.vertices.index(vertex)
+    return copy.vertices[index]
+
+
 def get_color_of_neighbourhood(n, lst):
     """
     Get the color for which the same colored neighbourhood is already in the list
@@ -220,22 +231,24 @@ def count_isomorphisms(G, H, D, I):
         return YES
     # Coarsest stable coloring is stable but not a bijection
     else:
-        copyG = G.deepcopy()
-        copyH = H.deepcopy()
         # Choose a color class C
-        C = get_smallest_colorclass(get_partitions(copyG, copyH))  # C moet >= 4 zijn
+        C = get_smallest_colorclass(get_partitions(G, H))  # C moet >= 4 zijn
         # Choose x in C union V(G)
         x = None
         for vertex in C:
-            if vertex.graph == copyG:
+            if vertex.graph == G:
                 x = vertex
                 break
         num = 0
         # For all y in C union V(H)
         for y in C:
-            if y.graph == copyH:
+            if y.graph == H:
                 # num = num + count_isomorphisms(G + x, H + x)
-                num += count_isomorphisms(copyG, copyH, [x], [y])
+                copy_g = G.deepcopy()
+                copy_h = H.deepcopy()
+                copy_x = get_copied_vertex(G, copy_g, x)
+                copy_y = get_copied_vertex(H, copy_h, y)
+                num = num + count_isomorphisms(copy_g, copy_h, [copy_x], [copy_y])
         return num
 
 
