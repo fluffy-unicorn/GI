@@ -88,7 +88,7 @@ class DoublyLinkedList(object):
             self.remove(current_node)
 
     def remove(self, node: "Node"):
-        """Remove a node from the list"""
+        """Remove a node from the list."""
         if node.previous is not None:
             #There was a previous node, 
             #so we can simply refer to the next node as the previous' next node
@@ -106,12 +106,12 @@ class DoublyLinkedList(object):
 
 
     def __iter__(self):
-             #to be implemented. 
-        return self
+        """Iterator for the DoublyLinkedList."""
+        current_node = self._head
 
-    def __next__(self):
-        #to be implemented.
-        return
+        while current_node is not None:
+            yield current_node
+            current_node = current_node.next
 
     @property
     def head(self) -> "Node":
@@ -171,4 +171,3 @@ class Node(object):
         :return: The string representation of the label.
         """
         return str(self._value)
-
