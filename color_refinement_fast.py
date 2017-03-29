@@ -174,14 +174,14 @@ def coarsest_stable_coloring(G, H):
         for v in partitions[C]:
             for n in v.neighbours:
                 if n.colornum == C:
-                    break
+                    continue
                 elif n in no_of_neighbours.keys():
                     no_of_neighbours[n] += 1
                 else:
                     no_of_neighbours[n] = 1
         # Make sets Di with number of vertices with i neighbours in C
-        for v in (G + H).vertices:
-            if not(v in no_of_neighbours.keys()):
+        for v in G.vertices + H.vertices:
+            if v not in no_of_neighbours.keys():
                 if 0 in D.keys():
                     D[0].append(v)
                 else:
