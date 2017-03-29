@@ -36,7 +36,7 @@ def add_vertex_to_partitions(partitions, key, value):
         partitions[key] = [value]
 
 
-def get_neighbourhood(v):  
+def get_neighbourhood_colors(v):
     """
     Get a sorted list of all the colors of all the neighbours
     :param v: The vertex
@@ -92,7 +92,7 @@ def refine_all(L):
             alg_time += end_alg - start_alg
             # Starting the verifier on (i, j)
             verified = verify_colors(L[0][i], L[0][j])
-            print("("+str(i)+","+str(j)+") "+str(isomorphisms)+" ["+str(verified)+"]")
+            print("("+str(i)+","+str(j)+") "+str(isomorphisms))
     print("Elapsed time (algorithm): " + str(int(alg_time*1000)) + " ms")
 
 
@@ -160,17 +160,19 @@ def coarsest_stable_coloring(G, H):
     and dict: resulting partitions dictionary
     """
     queue = deque()
+    visited = []
     partitions = get_partitions(G, H)
     # Kies een partitie
-    color_class = partitions.keys()[0]
-    queue.add(color_class)
+    color_class = list(partitions.keys())[0]
+    queue.append(color_class)
 
-    while len(queue > 0):
-        C = queue.pop(0)
+    while len(queue) > 0:
+        C = queue.popleft()
+        visited.append(C)
         no_of_neighbours = dict()
         D = dict()
         for v in partitions[C]:
-            for n in get_neighbourhood(v):
+            for n in v.neighbours:
                 if n.colornum == C:
                     break
                 elif n in no_of_neighbours.keys():
@@ -180,9 +182,15 @@ def coarsest_stable_coloring(G, H):
         # Make sets Di with number of vertices with i neighbours in C
         for v in (G + H).vertices:
             if not(v in no_of_neighbours.keys()):
-                D[0] = v
+                if 0 in D.keys():
+                    D[0].append(v)
+                else:
+                    D[0] = [v]
             else:
-                D[no_of_neighbours[v]] = v
+                if no_of_neighbours[v] in D.keys():
+                    D[no_of_neighbours[v]].append(v)
+                else:
+                    D[no_of_neighbours[v]] = [v]
         # Forall C' in partitions\C and len(C_prime) >= 4
         for C_prime in list(partitions.keys()):
             if C_prime != C and len(partitions[C_prime]) >= 4:
@@ -194,21 +202,22 @@ def coarsest_stable_coloring(G, H):
                                 C_prime_i[i].append(v)
                             else:
                                 C_prime_i[i] = [v]
-                # Remove C_prime from partitions
-                partitions.remove(C_prime)
                 last_color = get_last_color(partitions)
                 # Add all C_prime_i to partitions
-                i = 1
                 first = True
                 for c in C_prime_i.values():
-                    partitions[last_color + i] = c
-                    i += 1
-                    # Add all but the first C_prime_i to the queue
-                    if first and len(C_prime_i.values()) != 1:
-                        first = False
-                        continue
+                    if len(C_prime_i) == 1:
+                        if C_prime not in queue and C_prime not in visited:
+                            queue.append(C_prime)
                     else:
-                        queue.append(i)
+                        if first:
+                            partitions[C_prime] = c
+                            first = False
+                        else:
+                            partitions[last_color + 1] = c
+                            queue.append(last_color + 1)
+                            last_color += 1
+
     result = MAYBE
     for p in partitions:
         if len(partitions[p]) % 2 != 0:
@@ -269,7 +278,7 @@ def verify_colors(G, H):
     for G_v in G.vertices:
         for H_v in H.vertices:
             if G_v.colornum == H_v.colornum:
-                if not get_neighbourhood(G_v) == get_neighbourhood(H_v):
+                if not get_neighbourhood_colors(G_v) == get_neighbourhood_colors(H_v):
                     return False
     return True
 
