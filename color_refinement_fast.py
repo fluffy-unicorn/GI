@@ -13,6 +13,7 @@ NEIGHBOURS = 2
 UNKNOWN = -1
 VERTICES = 1
 
+
 def print_dot(filename, G):
     """
     Print a dot file with filename and graph
@@ -21,19 +22,6 @@ def print_dot(filename, G):
     """
     with open(filename, 'w') as f:
         write_dot(G, f)
-
-
-def add_vertex_to_partitions(partitions, key, value):
-    """
-    Update the partitions dictionary 'partitions'
-    :param partitions: The dictionary 'partitions'
-    :param key: The color of the partitions
-    :param value: the vertex that needs to be added to the partition
-    """
-    if key in partitions:
-        partitions[key].append(value)
-    else:
-        partitions[key] = [value]
 
 
 def get_neighbourhood_colors(v):
@@ -91,12 +79,12 @@ def refine_all(L):
             end_alg = time.time()
             alg_time += end_alg - start_alg
             # Starting the verifier on (i, j)
-            verified = verify_colors(L[0][i], L[0][j])
-            print("("+str(i)+","+str(j)+") "+str(isomorphisms))
-    print("Elapsed time (algorithm): " + str(int(alg_time*1000)) + " ms")
+            #verified = verify_colors(L[0][i], L[0][j])
+            print("(" + str(i) + "," + str(j) + ") " + str(isomorphisms))
+    print("Elapsed time (algorithm): " + str(int(alg_time * 1000)) + " ms")
 
 
-def get_partitions(G, H):
+def get_partition(G, H):
     """
     Make a dictionary with color classes of graphs G and H
     :param G: The graph G
@@ -106,10 +94,10 @@ def get_partitions(G, H):
     result = dict()
     # graph G
     for vG in G.vertices:
-        add_vertex_to_partitions(result, vG.colornum, vG)
+        insert_into_dictionary(result, vG.colornum, vG)
     # graph H
     for vH in H.vertices:
-        add_vertex_to_partitions(result, vH.colornum, vH)
+        insert_into_dictionary(result, vH.colornum, vH)
     return result
 
 
@@ -157,75 +145,92 @@ def coarsest_stable_coloring(G, H):
     :param H: The graph H
     :return: Tuple (int, dict)
     With int -> 0: unbalanced, 1: bijection, 2: stable but no bijection
-    and dict: resulting partitions dictionary
+    and dict: resulting partition dictionary
     """
     queue = deque()
-    visited = []
-    partitions = get_partitions(G, H)
+    visited_color_class_ids = []
+    partition = get_partition(G, H)
     # Kies een partitie
-    color_class = list(partitions.keys())[0]
-    queue.append(color_class)
+    color_class_id = list(partition.keys())[0]
+    queue.append(color_class_id)
 
     while len(queue) > 0:
-        C = queue.popleft()
-        visited.append(C)
-        no_of_neighbours = dict()
+        C_id = queue.popleft()
+        visited_color_class_ids.append(C_id)
+        color_class = partition[C_id]
+
+        # Make sets Di with number of vertices with i neighbours in C (invert the no_of_neighbours dictionary)
+        no_of_neighbours = count_incidents_with_color_class(color_class)
         D = dict()
-        for v in partitions[C]:
-            for n in v.neighbours:
-                if n.colornum == C:
-                    continue
-                elif n in no_of_neighbours.keys():
-                    no_of_neighbours[n] += 1
-                else:
-                    no_of_neighbours[n] = 1
-        # Make sets Di with number of vertices with i neighbours in C
         for v in G.vertices + H.vertices:
-            if v not in no_of_neighbours.keys():
-                if 0 in D.keys():
-                    D[0].append(v)
-                else:
-                    D[0] = [v]
-            else:
-                if no_of_neighbours[v] in D.keys():
-                    D[no_of_neighbours[v]].append(v)
-                else:
-                    D[no_of_neighbours[v]] = [v]
-        # Forall C' in partitions\C and len(C_prime) >= 4
-        for C_prime in list(partitions.keys()):
-            if C_prime != C and len(partitions[C_prime]) >= 4:
-                C_prime_i = dict()
-                for v in partitions[C_prime]:
+            v_neighbours = no_of_neighbours[v] if v in no_of_neighbours.keys() else 0  # ternary assignment
+            insert_into_dictionary(D, v_neighbours, v)
+
+        # Forall C' in partition\C and len(C_prime) >= 4
+        for C_prime in list(partition.keys()):
+            if C_prime != C_id:
+                if len(partition[C_prime]) >= 4:
+                    C_prime_i = dict()
                     for i in D.keys():
-                        if v in D[i]:
-                            if i in C_prime_i.keys():                    
-                                C_prime_i[i].append(v)
-                            else:
-                                C_prime_i[i] = [v]
-                last_color = get_last_color(partitions)
-                # Add all C_prime_i to partitions
-                first = True
-                for c in C_prime_i.values():
-                    if len(C_prime_i) == 1:
-                        if C_prime not in queue and C_prime not in visited:
-                            queue.append(C_prime)
-                    else:
-                        if first:
-                            partitions[C_prime] = c
-                            first = False
+                        for v in set(partition[C_prime]).intersection(D[i]):
+                            insert_into_dictionary(C_prime_i, i, v)
+                    last_color = get_last_color(partition)
+                    # Add all C_prime_i to partition
+                    first = True
+                    for c in C_prime_i.values():
+                        if len(c) & 0x1 == 0x1:  # Check if last bit is 1 (== number is odd)
+                            return NO, partition
+                        if len(C_prime_i) == 1:
+                            enqueue_once(C_prime, queue, visited_color_class_ids)
                         else:
-                            partitions[last_color + 1] = c
-                            queue.append(last_color + 1)
-                            last_color += 1
+                            if first:
+                                partition[C_prime] = c
+                                first = False
+                            else:
+                                partition[last_color + 1] = c
+                                queue.append(last_color + 1)
+                                last_color += 1
+                else:
+                    enqueue_once(C_prime, queue, visited_color_class_ids)
+                if len(partition) == len(G.vertices):
+                    return YES, partition
 
     result = MAYBE
-    for p in partitions:
-        if len(partitions[p]) % 2 != 0:
+    for p in partition:
+        if len(partition[p]) % 2 != 0:
             result = NO
-    if len(partitions) == len(G.vertices):
+    if len(partition) == len(G.vertices):
         result = YES
-    return (result, partitions)          
-            
+    return (result, partition)
+
+
+def count_incidents_with_color_class(color_class):
+    no_of_neighbours = dict()
+    for v in color_class:
+        for n in v.neighbours:
+            if n not in color_class:
+                increment_dict_value(no_of_neighbours, n)
+    return no_of_neighbours
+
+
+def increment_dict_value(dictionary, key):
+    if key in dictionary.keys():
+        dictionary[key] += 1
+    else:
+        dictionary[key] = 1
+
+
+def insert_into_dictionary(dictionary, key, value):
+    if key in dictionary.keys():
+        dictionary[key].append(value)
+    else:
+        dictionary[key] = [value]
+
+
+def enqueue_once(color_class, queue, visited):
+    if color_class not in queue and color_class not in visited:
+        queue.append(color_class)
+
 
 def find_isomorphisms(G, H):
     """
@@ -247,9 +252,9 @@ def count_isomorphisms(G, H, D, I):
     :return: The number of isomorphisms
     """
 
-    color = get_last_color(get_partitions(G, H)) + 1
+    color = get_last_color(get_partition(G, H)) + 1
 
-    for vertex in D+I:
+    for vertex in D + I:
         vertex.colornum = color
 
     (result, partitions) = coarsest_stable_coloring(G, H)
@@ -282,6 +287,7 @@ def verify_colors(G, H):
                     return False
     return True
 
+
 if __name__ == "__main__":
     """
     Main function
@@ -292,4 +298,4 @@ if __name__ == "__main__":
         graph_list = load_graph(f, read_list=True)
     refine_all(graph_list)
     end = time.time()
-    print("Elapsed time (total): " + str(int((end-start)*1000)) + " ms")
+    print("Elapsed time (total): " + str(int((end - start) * 1000)) + " ms")
