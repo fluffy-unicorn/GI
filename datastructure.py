@@ -1,60 +1,60 @@
 class DoublyLinkedList(object):
     def __init__(self):
-        self._first = None
-        self._last = None
+        self._head = None
+        self._tail = None
         self._size = 0
 
     def append(self, value):
         if (self._size == 0):
-            self._first = Node(None, value, None)
-            self._last = self._first
+            self._head = Node(None, value, None)
+            self._tail = self._head
         else:
-            newNode = Node(self._last, value, None)
-            self._last.setNext(newNode)
-            self._last = newNode
+            newNode = Node(self._tail, value, None)
+            self._tail.setNext(newNode)
+            self._tail = newNode
         self._size += 1
     
     def prepend(self, value):
         if (self._size == 0):
-            self._first = Node(None, value, None)
-            self._last = self._first
+            self._head = Node(None, value, None)
+            self._tail = self._head
         else:
-            newNode = Node(None, value, self._first)
-            self._first.setPrevious(newNode)
-            self._first = newNode
+            newNode = Node(None, value, self._head)
+            self._head.setPrevious(newNode)
+            self._head = newNode
         self._size += 1
 
-    def popfirst(self):
-        #Remove first element from list
+    def pophead(self):
+        #Remove head element from list
         if (self._size>1):
             #Set previous node of second element to None
-            self._first.next.setPrevious(None)
-            #Set second element to be the first
-            self._first = self._first.next
+            self._head.next.setPrevious(None)
+            #Set second element to be the head
+            self._head = self._head.next
             #Decrement size
             self._size -= 1
         elif (self._size == 1):
             #If list contains only one element, empty the list.
-            self._first = None
-            self._last = None
+            self._head = None
+            self._tail = None
             self._size = 0
         return
 
 
-    def poplast(self):
-        #Remove last element from list.
+    def poptail(self):
+        #Remove tail element from list.
         if (self._size>1):
-            #Set next node of second last element to None
-            self._last.previous.setNext(None)
-            #Set second last node to be the last
-            self._last = self._last.previous
+            #Set next node of second tail element to None
+            self._tail.previous.setNext(None)
+            #Set second tail node to be the tail
+            self._tail = self._tail.previous
             #Decrement size
             self._size -= 1
 
         elif (self._size==1):
             #If list contains only one element, empty the list.
-            self._last = None
-            self._first = None
+            self._tail = None
+            self._head = None
             self._size = 0
 
     def removeByIndex(self, index):
@@ -64,7 +64,7 @@ class DoublyLinkedList(object):
             break
 
         #Select a node, current_node, to be removed
-        current_node = self._first
+        current_node = self._head
         for i in range(0,index):
             current_node = current_node.next
 
@@ -74,7 +74,7 @@ class DoublyLinkedList(object):
     def removeByValue(self, value):
         #remove an item by value
 
-        current_node = self._first
+        current_node = self._head
         while current_node.value is not value:
             current_node = current_node.next
             if current_node is None:
@@ -90,14 +90,14 @@ class DoublyLinkedList(object):
             #so we can simply refer to the next node as the previous' next node
             node.previous.setNext(node.next)
         else:
-            #This was the first node.
-            this._first = node.next
+            #This was the head node.
+            this._head = node.next
 
         if node.next is not None:
             node.next.setPrevious(node.previous)
         else:
-            #This was the last node.
-            this._last = node.previous
+            #This was the tail node.
+            this._tail = node.previous
         this._size -= 1
 
 
@@ -109,12 +109,12 @@ class DoublyLinkedList(object):
         
 
     @property
-    def first(self) -> "Node":
-        return self._first
+    def head(self) -> "Node":
+        return self._head
     
     @property
-    def last(self) -> "Node":
-        return self._last
+    def tail(self) -> "Node":
+        return self._tail
 
     @property
     def size(self) -> int:
