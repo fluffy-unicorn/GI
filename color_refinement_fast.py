@@ -79,7 +79,7 @@ def refine_all(L):
             end_alg = time.time()
             alg_time += end_alg - start_alg
             # Starting the verifier on (i, j)
-            #verified = verify_colors(L[0][i], L[0][j])
+            # verified = verify_colors(L[0][i], L[0][j])
             print("(" + str(i) + "," + str(j) + ") " + str(isomorphisms))
     print("Elapsed time (algorithm): " + str(int(alg_time * 1000)) + " ms")
 
@@ -159,7 +159,7 @@ def coarsest_stable_coloring(G, H):
         visited_color_class_ids.append(C_id)
         color_class = partition[C_id]
 
-        # Make sets Di with number of vertices with i neighbours in C (invert the no_of_neighbours dictionary)
+        # Make sets Di = vertices with i neighbours in C (invert the no_of_neighbours dictionary)
         no_of_neighbours = count_incidents_with_color_class(color_class)
         D = dict()
         for v in G.vertices + H.vertices:
@@ -174,22 +174,28 @@ def coarsest_stable_coloring(G, H):
                     for i in D.keys():
                         for v in set(partition[C_prime]).intersection(D[i]):
                             insert_into_dictionary(C_prime_i, i, v)
+
+                    if len(C_prime_i) == 1:
+                        enqueue_once(C_prime, queue, visited_color_class_ids)
+                        continue
                     last_color = get_last_color(partition)
                     # Add all C_prime_i to partition
                     first = True
+                    smallest = None
+                    smallest_color = None
                     for c in C_prime_i.values():
-                        if len(c) & 0x1 == 0x1:  # Check if last bit is 1 (== number is odd)
+                        if len(c) & 0x1 == 1:  # Check if last bit is 1 (== number is odd)
                             return NO, partition
-                        if len(C_prime_i) == 1:
-                            enqueue_once(C_prime, queue, visited_color_class_ids)
-                        else:
-                            if first:
-                                partition[C_prime] = c
-                                first = False
-                            else:
-                                partition[last_color + 1] = c
-                                queue.append(last_color + 1)
-                                last_color += 1
+                        if C_prime in queue:
+                            queue.remove(C_prime)
+                        if C_prime in partition.keys():
+                            partition.pop(C_prime)
+                        last_color += 1
+                        partition[last_color] = c
+                        if smallest is None or len(c) < len(smallest):
+                            smallest_color = last_color
+                            smallest = c
+                    queue.append(smallest_color)
                 else:
                     enqueue_once(C_prime, queue, visited_color_class_ids)
                 if len(partition) == len(G.vertices):

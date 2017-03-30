@@ -94,6 +94,18 @@ def refine_all(L):
     print("Elapsed time (algorithm): " + str(int(alg_time*1000)) + " ms")
 
 
+def count_automorphisms(G):
+    alg_time = 0
+    # Starting the algorithm on (i, j)
+    start_alg = time.time()
+    initial_coloring(G)
+    isomorphisms = find_isomorphisms(G, G)
+    end_alg = time.time()
+    alg_time += end_alg - start_alg
+    print("G has " + str(isomorphisms) + " automorphisms")
+    print("Elapsed time (algorithm): " + str(int(alg_time * 1000)) + " ms")
+
+
 def get_partitions(G, H):
     """
     Make a dictionary with color classes of graphs G and H
@@ -279,7 +291,12 @@ if __name__ == "__main__":
     """
     start = time.time()
     with open(sys.argv[1]) as f:
-        graph_list = load_graph(f, read_list=True)
-    refine_all(graph_list)
+        if(str(sys.argv[1]).endswith(".grl")):
+            graph_list = load_graph(f, read_list=True)
+            refine_all(graph_list)
+        else:
+            graph = load_graph(f, read_list=False)
+            count_automorphisms(graph)
+
     end = time.time()
     print("Elapsed time (total): " + str(int((end-start)*1000)) + " ms")
