@@ -68,7 +68,7 @@ def get_color_of_neighbourhood(n, lst):
     return UNKNOWN
 
 
-def refine_all(L, colorclass_choice, coloring_choice):
+def refine_all(L, colorclass_choice, coloring_choice, fast):
     """
     Refine and verify all graphs in a list from the .grl file
     :param L: The list of graphs
@@ -86,11 +86,11 @@ def refine_all(L, colorclass_choice, coloring_choice):
             else:
                 initial_flat_coloring(G)
                 initial_flat_coloring(H)
-            isomorphisms = find_isomorphisms(G, H, colorclass_choice)
+            isomorphisms = find_isomorphisms(G, H, colorclass_choice, fast)
             end_alg = time.time()
             alg_time += end_alg - start_alg
-            print("("+str(i)+","+str(j)+") "+str(isomorphisms))
-    print("Elapsed time (algorithm): " + str(int(alg_time*1000)) + " ms")
+            #print("("+str(i)+","+str(j)+") "+str(isomorphisms))
+    #print("Elapsed time (algorithm): " + str(int(alg_time*1000)) + " ms")
 
 
 def count_automorphisms(G):
@@ -101,8 +101,8 @@ def count_automorphisms(G):
     isomorphisms = find_isomorphisms(G, G)
     end_alg = time.time()
     alg_time += end_alg - start_alg
-    print("G has " + str(isomorphisms) + " automorphisms")
-    print("Elapsed time (algorithm): " + str(int(alg_time * 1000)) + " ms")
+    #print("G has " + str(isomorphisms) + " automorphisms")
+    #print("Elapsed time (algorithm): " + str(int(alg_time * 1000)) + " ms")
 
 
 def get_partitions(G, H):
@@ -146,7 +146,10 @@ def get_biggest_colorclass(partitions):
     return biggest
 
 def get_random_colorclass(partitions):
-    raise ValueError("Random is not implemented") 
+    partition = random.choice(list(partitions.values()))
+    while len(partition) < 4:
+        partition = random.choice(list(partitions.values()))
+    return partition
 
 def get_last_color(partitions):
     """
@@ -173,7 +176,7 @@ def initial_flat_coloring(G):
     for v in G.vertices:
         v.colornum = 0
 
-def coarsest_stable_coloring(G, H):
+def coarsest_stable_coloring(G, H, fast):
     """
     Calculates the coarsest stable coloring on graphs G and H
     :param G: The graph G
@@ -212,31 +215,34 @@ def coarsest_stable_coloring(G, H):
                 else:
                     partitions[t[COLOR]] = [t[VERTEX]]
                 t[VERTEX].colornum = t[COLOR]
-            if len(color_class) % 2 != 0: # Check for unbalanced coloring
+            if fast and len(color_class) % 2 != 0: # Check for unbalanced coloring
                 return (NO, partitions) 
             last_key = p
-        if len(partitions) == len(G.vertices): # Check for bijection
+        if fast and len(partitions) == len(G.vertices): # Check for bijection
             return (YES, partitions)
     # Check the resulting color classes for an unbalanced coloring
     for p in range(last_key + 1, len(partitions)):
         if len(partitions[p]) % 2 != 0:
             return (NO, partitions)
+    if not fast:
+        if len(partitions) == len(G.vertices): # Check for bijection
+            return (YES, partitions)
     return (MAYBE, partitions)
 
 
-def find_isomorphisms(G, H, choice):
+def find_isomorphisms(G, H, choice, fast):
     """
     Wrapper function to call the recursive count_isomorphisms(). Checks precondition.
     :param G: The graph G
     :param H: The graph H
     :return: The number of isomorphisms
     """
-    if not (len(G.vertices) == len(H.vertices)):
+    if fast and len(G.vertices) != len(H.vertices):
         return NO
-    return count_isomorphisms(G, H, [], [], choice)
+    return count_isomorphisms(G, H, [], [], choice, fast)
 
 
-def count_isomorphisms(G, H, D, I, choice):
+def count_isomorphisms(G, H, D, I, choice, fast):
     """
     Count the number of isomorphisms with graph G and H
     :param G: The graph G
@@ -249,7 +255,7 @@ def count_isomorphisms(G, H, D, I, choice):
     for vertex in D+I:
         vertex.colornum = color
 
-    (result, partitions) = coarsest_stable_coloring(G, H)
+    (result, partitions) = coarsest_stable_coloring(G, H, fast)
 
     for p in partitions:
         if len(partitions[p]) % 2 != 0:
@@ -262,19 +268,22 @@ def count_isomorphisms(G, H, D, I, choice):
         return YES
     # Coarsest stable coloring is stable but not a bijection
     else:
+        partitions = get_partitions(G, H)
         # Choose a color class C
         if choice == SMALLEST:
-            C = get_smallest_colorclass(get_partitions(G, H))  # C moet >= 4 zijn
+            C = get_smallest_colorclass(partitions)  # C moet >= 4 zijn
         elif choice == BIGGEST:
-            C = get_biggest_colorclass(get_partitions(G, H))
+            C = get_biggest_colorclass(partitions)
         else:
-            C = get_random_colorclass(get_partitions(G, H))
+            C = get_random_colorclass(partitions)            
         # Choose x in C union V(G)
         x = None
         for vertex in C:
             if vertex.graph == G:
                 x = vertex
                 break
+        if x == None:
+            return NO 
         num = 0
         # For all y in C union V(H)
         for y in C:
@@ -284,7 +293,7 @@ def count_isomorphisms(G, H, D, I, choice):
                 copy_h = H.deepcopy()
                 copy_x = get_copied_vertex(G, copy_g, x)
                 copy_y = get_copied_vertex(H, copy_h, y)
-                num = num + count_isomorphisms(copy_g, copy_h, [copy_x], [copy_y], choice)
+                num = num + count_isomorphisms(copy_g, copy_h, [copy_x], [copy_y], choice, fast)
         return num
 
 
@@ -307,6 +316,7 @@ if __name__ == "__main__":
     Main function
     :param 1: The .grl-file
     """
+    USAGE = "Usage:\npython3 " + str(sys.argv[0]) + " [filename] [biggest|smallest|random] [flat|degree]"
     start = time.time()
     with open(sys.argv[1]) as f:
         if(str(sys.argv[1]).endswith(".grl")):
@@ -315,16 +325,29 @@ if __name__ == "__main__":
                 colorclass_choice = BIGGEST
             elif(sys.argv[2] == "random"):
                 colorclass_choice = RANDOM
-            else:
+            elif(sys.argv[2] == "smallest"):
                 colorclass_choice = SMALLEST
+            else:
+                print (USAGE)
+                exit();
             if(sys.argv[3] == "flat"):
                 coloring_choice = FLAT
-            else:
+            elif(sys.argv[3] == "degree"):
                 coloring_choice = DEGREE
-            refine_all(graph_list, colorclass_choice, coloring_choice)
+            else:
+                print (USAGE)
+                exit();
+            if(sys.argv[4] == "fast"):
+                fast = True
+            elif(sys.argv[4] == "slow"):
+                fast = False
+            else:
+                print (USAGE)
+                exit();
+            refine_all(graph_list, colorclass_choice, coloring_choice, fast)
         else:
             graph = load_graph(f, read_list=False)
             count_automorphisms(graph)
 
     end = time.time()
-    print("Elapsed time (total): " + str(int((end-start)*1000)) + " ms")
+    print(int((end-start)*1000))

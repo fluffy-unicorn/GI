@@ -1,3 +1,5 @@
 # Compiled python source #
 #########################
 *.pyc
+# PyEnv #
+.python_version

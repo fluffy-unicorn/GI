@@ -159,7 +159,6 @@ def initial_coloring(G):
     for v in G.vertices:
         v.colornum = v.degree
 
-
 def coarsest_stable_coloring(G, H):
     """
     Calculates the coarsest stable coloring on graphs G and H
@@ -257,6 +256,8 @@ def count_isomorphisms(G, H, D, I):
             if vertex.graph == G:
                 x = vertex
                 break
+        if x == None: # C has an even sized partitions, but all vertices are in H
+            return NO
         num = 0
         # For all y in C union V(H)
         for y in C:
