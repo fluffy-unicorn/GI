@@ -1,0 +1,15 @@
+The implementation is tested with Python 3.5.2 and Python 3.6.1.
+While it should work with each version of Python 3, the latter is recommended.
+
+The program can handle .gr and .grl files.
+With .gr files, it is assumed that the counting automorphism problem must be solved.
+With .grl files, a switch is added to tell the program to either show the (pairwise)
+isomorphisms or the number of automorphisms of each graph in the file.
+
+The program has to be called as follows:
+(For .gr files):
+python3 main.py filename.gr
+(For .grl files, isomorphism problem):
+python3 main.py filename.grl -i
+(For .grl files, # automorphisms problem):
+python3 main.py filename.grl -a

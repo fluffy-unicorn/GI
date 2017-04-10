@@ -13,7 +13,8 @@ def find_isomorphisms(G, H):
     matrix_size = len(G.matrix[0])
     for perm in get_permutations(range(matrix_size), matrix_size):
         if are_equal(G.matrix, H.matrix, perm):
-            count += 1
+            #count += 1
+            return 1
     return count
 
 def are_equal(matrixG, matrixH, perm):

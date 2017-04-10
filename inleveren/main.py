@@ -5,7 +5,8 @@ from ind_refinement import find_all_isomorphisms, count_all_automorphisms, count
 if __name__ == "__main__":
     """
     Main function
-    :param 1: The .grl-file
+    :param 1: A .grl or .gr file for computing the isomorphism or automorphism problem
+    :param 2: (Only with .grl files) -a for computing automorphisms and -i for computing isomorphisms
     """
     USAGE = "Usage: python3 " + sys.argv[0] + " [filename] <options>"
     OPTIONS = "options:\t-i or isomorphism\n\t\t-a or automorphisms"
