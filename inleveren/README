@@ -8,8 +8,10 @@ isomorphisms or the number of automorphisms of each graph in the file.
 
 The program has to be called as follows:
 (For .gr files):
-python3 main.py filename.gr
+[python cmd] main.py filename.gr
 (For .grl files, isomorphism problem):
-python3 main.py filename.grl -i
+[python cmd] main.py filename.grl -i
 (For .grl files, # automorphisms problem):
-python3 main.py filename.grl -a
+[python cmd] main.py filename.grl -a
+
+Where [python cmd] is 'python3' on Linux and similar on other OS.
