@@ -11,6 +11,8 @@ NEIGHBOURS = 2
 UNKNOWN = -1
 VERTICES = 1
 
+count_isomorphism = True
+
 def print_dot(filename, G):
     """
     Print a dot file with filename and graph
@@ -71,39 +73,45 @@ def get_color_of_neighbourhood(n, lst):
     return UNKNOWN
 
 
-def refine_all(L):
+def find_all_isomorphisms(L):
     """
     Refine and verify all graphs in a list from the .grl file
     :param L: The list of graphs
     """
-    alg_time = 0
+    global count_isomorphism
+    count_isomorphism = False
     for i in range(0, len(L[0])):
         for j in range(i + 1, len(L[0])):
             # Starting the algorithm on (i, j)
-            start_alg = time.time()
+            #start_alg = time.time()
             G = L[0][i]
             H = L[0][j]
             initial_coloring(G)
             initial_coloring(H)
             isomorphisms = find_isomorphisms(G, H)
-            end_alg = time.time()
-            alg_time += end_alg - start_alg
+           # end_alg = time.time()
+            #alg_time += end_alg - start_alg
             # Starting the verifier on (i, j)
-            verified = verify_colors(L[0][i], L[0][j])
-            print("("+str(i)+","+str(j)+") "+str(isomorphisms)+" ["+str(verified)+"]")
-    print("Elapsed time (algorithm): " + str(int(alg_time*1000)) + " ms")
+            #verified = verify_colors(L[0][i], L[0][j])
+            if isomorphisms == 1:
+                print("["+str(i)+","+str(j)+"] ")
+    #print("Elapsed time (algorithm): " + str(int(alg_time*1000)) + " ms")
+
+def count_all_automorphisms(G_list):
+    for i in range(0, len(G_list[0])):
+        count_automorphisms(G_list[0][i], i)
 
 
-def count_automorphisms(G):
+def count_automorphisms(G, i):
     alg_time = 0
     # Starting the algorithm on (i, j)
-    start_alg = time.time()
+    #start_alg = time.time()
     initial_coloring(G)
-    isomorphisms = find_isomorphisms(G, G)
-    end_alg = time.time()
-    alg_time += end_alg - start_alg
-    print("G has " + str(isomorphisms) + " automorphisms")
-    print("Elapsed time (algorithm): " + str(int(alg_time * 1000)) + " ms")
+    isomorphisms = find_isomorphisms(G, G.deepcopy())
+    #end_alg = time.time()
+    #alg_time += end_alg - start_alg
+    print("(" + str(i) + ") has " + str(isomorphisms) + " automorphisms")
+    #print("Elapsed time (algorithm): " + str(int(alg_time * 1000)) + " ms")
 
 
 def get_partitions(G, H):
@@ -229,7 +237,7 @@ def count_isomorphisms(G, H, D, I):
     :param H: The graph H
     :return: The number of isomorphisms
     """
-
+    global count_isomorphism
     color = get_last_color(get_partitions(G, H)) + 1
 
     for vertex in D+I:
@@ -268,6 +276,8 @@ def count_isomorphisms(G, H, D, I):
                 copy_x = get_copied_vertex(G, copy_g, x)
                 copy_y = get_copied_vertex(H, copy_h, y)
                 num = num + count_isomorphisms(copy_g, copy_h, [copy_x], [copy_y])
+                if not(count_isomorphism) and num > 0:
+                    return 1
         return num
 
 

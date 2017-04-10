@@ -396,29 +396,23 @@ class Graph(object):
             newG += newE
         return newG
 
-    def toMatrix(self):
+    def to_matrix(self):
         # Create a mapping of the vertices to matrix indices
         last_index = 0
         vertex_mapping = dict()
         vertex_count = len(self.vertices)
-        matrix = [self.vertices][self.vertices]
+        matrix = [[0 for x in range(vertex_count)] for y in range(vertex_count)]
         for v in self.vertices:
             vertex_mapping[v] = last_index
             last_index += 1
         # Build the adjacency matrix
         for v in self.vertices:
             v_index = vertex_mapping[v]
-            for w in self.vertices:
+            for w in v.neighbours:
                 w_index = vertex_mapping[w]
-                if w in v.neighbours:
-                    matrix[v][w] = 1
-                    matrix[w][v] = 1
-                else:
-                    matrix[v][w] = 0
-                    matrix[w][v] = 0
+                matrix[v_index][w_index] = 1
+                matrix[w_index][v_index] = 1
         return matrix
-                    
-            
 
 
 class UnsafeGraph(Graph):
