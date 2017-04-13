@@ -19,14 +19,12 @@ if __name__ == "__main__":
             # Find isomorphisms
             with open(sys.argv[1]) as f:
                 graph_list = load_graph(f, read_list = True)
-                print("Sets of isomorphic graphs:")
-                find_all_isomorphisms(graph_list)
+                find_all_isomorphisms(graph_list[0])
         elif sys.argv[2] == "-a" or sys.argv[2] == "automorphism":
             # Count automorphisms
             with open(sys.argv[1]) as f:
                 graph_list = load_graph(f, read_list = True)
-                print("Graph:\tNumber of automorphisms:")
-                count_all_automorphisms(graph_list)
+                count_all_automorphisms(graph_list[0])
         else:
             print(USAGE)
             print(OPTIONS)
@@ -35,7 +33,6 @@ if __name__ == "__main__":
         # Single graph
         with open(sys.argv[1]) as f:
             graph = load_graph(f)
-            print("Graph:\tNumber of automorphisms:")
             count_automorphisms(graph, 0)
     else:
         print(USAGE)

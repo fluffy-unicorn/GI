@@ -14,23 +14,55 @@ VERTICES = 1
 
 # Global variables
 count_isomorphism = True
+#equivalence_classes = []
 
-def find_all_isomorphisms(G_list):
+def find_all_isomorphisms(G_list, prnt = True):
     """
     Refine and verify all graphs in a list from the .grl file
     :param G_list: The list of graphs
     """
     global count_isomorphism
+    old_count_iso = count_isomorphism
+    equivalence_classes = []
     count_isomorphism = False
-    for i in range(0, len(G_list[0])):
-        for j in range(i + 1, len(G_list[0])):
-            G = G_list[0][i]
-            H = G_list[0][j]
+    for i in range(0, len(G_list)):
+        for j in range(i + 1, len(G_list)):
+            G = G_list[i]
+            H = G_list[j]
             initial_coloring(G)
             initial_coloring(H)
             isomorphisms = find_isomorphisms(G, H)
             if isomorphisms == 1:
-                print("["+str(i)+", "+str(j)+"] ")
+                if len(equivalence_classes) > 0:
+                    changed = False
+                    for x in equivalence_classes:
+                        if i in x:
+                            if j not in x:
+                                x.append(j)
+                            changed = True
+                            break
+                        elif j in x:
+                            if i not in x:
+                                x.append(i)
+                            changed = True
+                            break
+                    if not(changed):
+                        equivalence_classes.append([i, j])
+                else: 
+                    equivalence_classes.append([i, j])
+                #print("["+str(i)+","+str(j)+"] ")
+    for i in range(0, len(G_list)):
+        is_in_list = False
+        for x in equivalence_classes:
+            if i in x:
+                is_in_list = True
+                break
+        if not is_in_list:
+            equivalence_classes.append([i])
+    if prnt:
+        print(equivalence_classes)
+    count_isomorphism = old_count_iso
+    return equivalence_classes
 
 
 def count_all_automorphisms(G_list):
@@ -38,8 +70,13 @@ def count_all_automorphisms(G_list):
     Count all the automorphisms of the graphs in the graph list
     :param G_list: The list of graphs
     """
-    for i in range(0, len(G_list[0])):
-        count_automorphisms(G_list[0][i], i)
+    G_list_copy = []
+    for G in G_list:
+        G_list_copy.append(G.deepcopy())
+    equivalence_classes = find_all_isomorphisms(G_list_copy, False)
+    for i in equivalence_classes:
+        representant = i[0]
+        count_automorphisms(G_list[representant], i)
 
 
 def count_automorphisms(G, name):
@@ -50,7 +87,7 @@ def count_automorphisms(G, name):
     """
     initial_coloring(G)
     isomorphisms = find_isomorphisms(G, G.deepcopy())
-    print(str(name) + ":\t" + str(isomorphisms))
+    print("(" + str(name) + ") has " + str(isomorphisms) + " automorphisms")
 
 
 def get_biggest_colorclass(partitions):
@@ -136,7 +173,7 @@ def coarsest_stable_coloring(G, H):
             return (YES, partitions)
     # Check the resulting color classes for an unbalanced coloring
     for p in range(last_key + 1, len(partitions)):
-        if p in partitions and len(partitions[p]) % 2 != 0:
+        if len(partitions[p]) % 2 != 0:
             return (NO, partitions)
     return (MAYBE, partitions)
 
@@ -187,7 +224,7 @@ def count_isomorphisms(G, H, D, I):
             if vertex.graph == G:
                 x = vertex
                 break
-        if x is None: # C has an even sized partitions, but all vertices are in H
+        if x == None: # C has an even sized partitions, but all vertices are in H
             return NO
         num = 0
         # For all y in C union V(H)
